@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nceu-live",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-16",
+  "account_id": "c90070fbe9f928f17c328c65fb3781ab",
+  "vars": {
+    "STREAM_CUSTOMER_CODE": "cgfyu1klegxoplks",
+    "STREAM_LIVE_INPUT_ID": "0107a3ca39762a332a6cfce01fed97f5"
+  },
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "routes": [
+    {
+      "pattern": "live.nodeconf.eu",
+      "custom_domain": true
+    }
+  ]
+}

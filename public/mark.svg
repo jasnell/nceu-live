@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 278" role="img" aria-labelledby="title">
+  <title id="title">NodeConf EU 2026 Bologna</title>
+  <defs>
+    <clipPath id="hex">
+      <path d="M120 0 240 69.5v139L120 278 0 208.5v-139Z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#hex)">
+    <rect width="240" height="130" fill="#39b54a"/>
+    <rect y="130" width="240" height="38" fill="#fff"/>
+    <rect y="168" width="240" height="110" fill="#231f20"/>
+    <path d="M119 7v112M105 30h28M108 42h22" fill="none" stroke="#231f20" stroke-width="8" stroke-linecap="square"/>
+    <path d="m28 129 12-55 16 55m-21-25h17M183 129V77l28 52V77" fill="none" stroke="#231f20" stroke-width="7" stroke-linejoin="round"/>
+    <text x="120" y="155" fill="#231f20" font-family="Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="1" text-anchor="middle">NODECONF EU</text>
+    <text x="120" y="216" fill="#fff" font-family="Arial, sans-serif" font-size="42" font-weight="700" text-anchor="middle">2026</text>
+    <text x="120" y="243" fill="#fff" font-family="Georgia, serif" font-size="20" font-style="italic" text-anchor="middle">Bologna</text>
+  </g>
+</svg>
