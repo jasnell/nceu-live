@@ -8,6 +8,7 @@ export type LifecycleStatus = "live" | "standby" | "unknown";
 export interface StreamConfiguration {
   lifecycleUrl: string;
   playerUrl: string;
+  viewsUrl: string;
 }
 
 const safePathSegment = /^[a-z0-9_-]{8,128}$/i;
@@ -35,6 +36,7 @@ export function resolveStreamConfiguration(
   return {
     lifecycleUrl: new URL(`/${inputId}/lifecycle`, streamOrigin).toString(),
     playerUrl: playerUrl.toString(),
+    viewsUrl: new URL(`/${inputId}/views`, streamOrigin).toString(),
   };
 }
 
@@ -54,4 +56,22 @@ export function parseLifecycleStatus(value: unknown): LifecycleStatus {
   }
 
   return "unknown";
+}
+
+export function parseLiveViewerCount(value: unknown): number | null {
+  if (!value || typeof value !== "object" || !("liveViewers" in value)) {
+    return null;
+  }
+
+  const { liveViewers } = value as { liveViewers?: unknown };
+
+  if (
+    typeof liveViewers !== "number" ||
+    !Number.isSafeInteger(liveViewers) ||
+    liveViewers < 0
+  ) {
+    return null;
+  }
+
+  return liveViewers;
 }

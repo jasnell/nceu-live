@@ -1,4 +1,5 @@
 import {
+  parseLiveViewerCount,
   parseLifecycleStatus,
   resolveStreamConfiguration,
   type LifecycleStatus,
@@ -11,6 +12,7 @@ interface Env extends StreamBindings {
 
 interface StreamApiResponse {
   configured: boolean;
+  liveViewers?: number;
   playerUrl?: string;
   status: LifecycleStatus | "unconfigured";
 }
@@ -58,25 +60,40 @@ async function getStreamResponse(env: Env): Promise<Response> {
   }
 
   let status: LifecycleStatus = "unknown";
+  let liveViewers: number | null = null;
 
-  try {
-    const lifecycleResponse = await fetch(configuration.lifecycleUrl, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(3_000),
-    });
+  const [lifecycleResult, viewsResult] = await Promise.allSettled([
+    fetchStreamJson(configuration.lifecycleUrl),
+    fetchStreamJson(configuration.viewsUrl),
+  ]);
 
-    if (lifecycleResponse.ok) {
-      status = parseLifecycleStatus(await lifecycleResponse.json());
-    }
-  } catch {
-    // The player remains usable when the optional lifecycle check is unavailable.
+  if (lifecycleResult.status === "fulfilled") {
+    status = parseLifecycleStatus(lifecycleResult.value);
+  }
+
+  if (viewsResult.status === "fulfilled") {
+    liveViewers = parseLiveViewerCount(viewsResult.value);
   }
 
   return json({
     configured: true,
+    ...(liveViewers === null ? {} : { liveViewers }),
     playerUrl: configuration.playerUrl,
     status,
   });
+}
+
+async function fetchStreamJson(url: string): Promise<unknown> {
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(3_000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Stream endpoint returned ${response.status}`);
+  }
+
+  return response.json();
 }
 
 function applySecurityHeaders(response: Response): Response {

@@ -6,12 +6,15 @@ const standbyMessage = document.querySelector("#standby-message");
 const retryButton = document.querySelector("#retry-stream");
 const liveStatus = document.querySelector("#live-status");
 const liveStatusLabel = document.querySelector("#live-status-label");
+const viewerCount = document.querySelector("#viewer-count");
+const viewerCountLabel = document.querySelector("#viewer-count-label");
 const directPlayerLinks = document.querySelectorAll("[data-direct-player]");
 const themeColor = document.querySelector("#theme-color");
 const themeButtons = document.querySelectorAll("[data-theme-value]");
 
 let activePlayerUrl = null;
 let refreshPromise = null;
+const viewerCountFormatter = new Intl.NumberFormat("en");
 
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
@@ -54,6 +57,21 @@ function setLiveStatus(state, label) {
   liveStatus.dataset.state = state;
   liveStatusLabel.textContent = label;
   document.title = state === "live" ? `Live now | ${defaultTitle}` : defaultTitle;
+}
+
+function setLiveViewerCount(value) {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    viewerCount.hidden = true;
+    return;
+  }
+
+  const label = `${viewerCountFormatter.format(value)} watching`;
+
+  if (viewerCountLabel.textContent !== label) {
+    viewerCountLabel.textContent = label;
+  }
+
+  viewerCount.hidden = false;
 }
 
 function setDirectPlayerUrl(url) {
@@ -145,6 +163,7 @@ async function refreshStream() {
       const stream = await response.json();
 
       if (!stream.configured || !isCloudflareStreamPlayerUrl(stream.playerUrl)) {
+        setLiveViewerCount(null);
         setLiveStatus("standby", "Channel opening soon");
         showStandby(
           "The broadcast begins here.",
@@ -156,13 +175,17 @@ async function refreshStream() {
       mountPlayer(stream.playerUrl);
 
       if (stream.status === "live") {
+        setLiveViewerCount(stream.liveViewers);
         setLiveStatus("live", "Live now");
       } else if (stream.status === "standby") {
+        setLiveViewerCount(null);
         setLiveStatus("standby", "Stream not started");
       } else {
+        setLiveViewerCount(null);
         setLiveStatus("unknown", "Player ready");
       }
     } catch {
+      setLiveViewerCount(null);
       setLiveStatus("unknown", activePlayerUrl ? "Player ready" : "Connection unavailable");
 
       if (!activePlayerUrl) {

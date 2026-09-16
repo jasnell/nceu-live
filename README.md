@@ -5,9 +5,9 @@ The Cloudflare Worker for `live.nodeconf.eu`. It serves a responsive broadcast p
 ## Architecture
 
 - Cloudflare Workers Static Assets serves the HTML, CSS, JavaScript, and event mark without invoking the Worker script.
-- `GET /api/stream` builds the Stream Player URL from Worker bindings and checks the Live Input lifecycle.
-- The browser polls that endpoint every 15 seconds to keep the on-air indicator current.
-- Lifecycle responses are cached at the edge for 10 seconds so viewer traffic does not become one Stream lifecycle request per viewer.
+- `GET /api/stream` builds the Stream Player URL from Worker bindings and checks the Live Input lifecycle and live viewer count concurrently.
+- The browser polls that endpoint every 15 seconds to keep the on-air indicator and viewer count current.
+- Stream status responses are cached at the edge for 10 seconds so viewer traffic does not become one analytics request per viewer.
 - The stable Live Input ID is used instead of a per-broadcast Video ID, so one page follows the active broadcast across both conference days.
 
 There is no frontend framework or runtime dependency. Cloudflare's hosted Stream Player handles adaptive playback and the live-input standby state.

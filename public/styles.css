@@ -585,6 +585,13 @@ main {
   color: var(--accent);
 }
 
+.stage-signals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
 .live-status {
   display: inline-flex;
   min-height: 34px;
@@ -632,6 +639,31 @@ main {
 
 .live-status[data-state="live"] .status-dot {
   animation: 1.15s ease-in-out infinite live-pulse;
+}
+
+.viewer-count {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(128, 128, 128, 0.52);
+  color: inherit;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.viewer-count svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
 }
 
 .stage-layout {
@@ -1297,6 +1329,10 @@ main {
 
   .stage-header p {
     padding-left: 0.15rem;
+  }
+
+  .stage-signals {
+    width: 100%;
   }
 
   .player-column {

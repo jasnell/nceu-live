@@ -99,9 +99,18 @@
 
           <section class="stage-shell" aria-label="NodeConf EU main-stage live stream">
             <header class="stage-header">
-              <div id="live-status" class="live-status" data-state="loading" role="status" aria-live="polite">
-                <span class="status-dot" aria-hidden="true"></span>
-                <span id="live-status-label">Checking the line</span>
+              <div class="stage-signals">
+                <div id="live-status" class="live-status" data-state="loading" role="status" aria-live="polite">
+                  <span class="status-dot" aria-hidden="true"></span>
+                  <span id="live-status-label">Checking the line</span>
+                </div>
+                <div id="viewer-count" class="viewer-count" aria-live="polite" hidden>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="2.6"></circle>
+                    <path d="M3.8 18a5.2 5.2 0 0 1 10.4 0M15 6.2a2.6 2.6 0 0 1 0 5.1M16.2 13.4A4.7 4.7 0 0 1 20.3 18"></path>
+                  </svg>
+                  <span id="viewer-count-label">0 watching</span>
+                </div>
               </div>
               <p>Transmission 01 <span aria-hidden="true">/</span> Bologna, IT</p>
             </header>
