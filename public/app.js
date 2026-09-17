@@ -18,7 +18,7 @@ const nextSession = document.querySelector("#next-session");
 const nextSessionTime = document.querySelector("#next-session-time");
 const nextSessionTitle = document.querySelector("#next-session-title");
 const nextSessionPeople = document.querySelector("#next-session-people");
-const directPlayerLinks = document.querySelectorAll("[data-direct-player]");
+const playerPageLinks = document.querySelectorAll("[data-player-page]");
 const themeColor = document.querySelector("#theme-color");
 const themeButtons = document.querySelectorAll("[data-theme-value]");
 
@@ -424,10 +424,10 @@ async function refreshProgram() {
   return programRefreshPromise;
 }
 
-function setDirectPlayerUrl(url) {
-  for (const link of directPlayerLinks) {
-    if (url) {
-      link.href = url;
+function setPlayerPageLinksAvailable(isAvailable) {
+  for (const link of playerPageLinks) {
+    if (isAvailable) {
+      link.href = "/#player-frame";
       link.hidden = false;
     } else {
       link.removeAttribute("href");
@@ -444,7 +444,7 @@ function showStandby(title, message, canRetry = false) {
   playerFrame.replaceChildren(standby);
   playerFrame.dataset.state = canRetry ? "error" : "standby";
   playerFrame.setAttribute("aria-busy", "false");
-  setDirectPlayerUrl(null);
+  setPlayerPageLinksAvailable(false);
 }
 
 function isCloudflareStreamPlayerUrl(value) {
@@ -487,7 +487,7 @@ function mountPlayer(url) {
   );
 
   activePlayerUrl = url;
-  setDirectPlayerUrl(url);
+  setPlayerPageLinksAvailable(true);
 }
 
 async function refreshStream() {

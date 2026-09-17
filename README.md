@@ -46,6 +46,8 @@ npm run dev -- --var PROGRAM_URL:http://localhost:3001/program.json
 
 If Stream hotlink protection is enabled, add `live.nodeconf.eu` to the Live Input recording settings' allowed origins. Add the local Wrangler origin while testing locally, for example `localhost:8787`, then remove it before the event if it is no longer needed.
 
+Player helper links open `/#player-frame` on the live site rather than navigating directly to `cloudflarestream.com`, so they remain compatible with the allowed-origin restriction.
+
 ## Development
 
 ```bash
