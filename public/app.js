@@ -522,15 +522,19 @@ async function refreshStream() {
         return;
       }
 
-      mountPlayer(stream.playerUrl);
-
       if (stream.status === "live") {
+        mountPlayer(stream.playerUrl);
         setLiveViewerCount(stream.liveViewers);
         setLiveStatus("live", "Live now");
       } else if (stream.status === "standby") {
         setLiveViewerCount(null);
         setLiveStatus("standby", "Stream not started");
+        showStandby(
+          "The main stage is off air.",
+          "The live player will appear automatically when the broadcast begins.",
+        );
       } else {
+        mountPlayer(stream.playerUrl);
         setLiveViewerCount(null);
         setLiveStatus("unknown", "Player ready");
       }

@@ -9,6 +9,7 @@ The Cloudflare Worker for `live.nodeconf.eu`. It serves a responsive broadcast p
 - `GET /api/program` proxies the versioned program feed published by the main NodeConf EU Worker and caches it for five minutes.
 - The browser polls that endpoint every 15 seconds to keep the on-air indicator and viewer count current.
 - The current/next panel advances against the published schedule in the `Europe/Rome` timezone and refreshes its source data every five minutes.
+- While the Live Input reports `standby`, the page keeps the Stream iframe unmounted and shows the branded fallback; it mounts the player automatically when the broadcast becomes live.
 - Stream status responses are cached at the edge for 10 seconds so viewer traffic does not become one analytics request per viewer.
 - The stable Live Input ID is used instead of a per-broadcast Video ID, so one page follows the active broadcast across both conference days.
 
