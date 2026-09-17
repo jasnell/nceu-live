@@ -18,9 +18,38 @@ test("builds Stream player and lifecycle URLs from valid bindings", () => {
       "https://customer-f33zs165nr7gyfy4.cloudflarestream.com/6b9e68b07dfee8cc2d116e4c51d6a957/lifecycle",
     playerUrl:
       "https://customer-f33zs165nr7gyfy4.cloudflarestream.com/6b9e68b07dfee8cc2d116e4c51d6a957/iframe?primaryColor=%2339b54a&letterboxColor=%2314110c",
+    source: "primary",
     viewsUrl:
       "https://customer-f33zs165nr7gyfy4.cloudflarestream.com/6b9e68b07dfee8cc2d116e4c51d6a957/views",
   });
+});
+
+test("prefers a valid failover input", () => {
+  const configuration = resolveStreamConfiguration({
+    STREAM_CUSTOMER_CODE: "f33zs165nr7gyfy4",
+    STREAM_LIVE_INPUT_ID: "6b9e68b07dfee8cc2d116e4c51d6a957",
+    STREAM_FAILOVER_LIVE_INPUT_ID: "0107a3ca39762a332a6cfce01fed97f5",
+  });
+
+  assert.equal(configuration?.source, "failover");
+  assert.match(
+    configuration?.playerUrl ?? "",
+    /0107a3ca39762a332a6cfce01fed97f5/,
+  );
+});
+
+test("ignores an invalid failover input", () => {
+  const configuration = resolveStreamConfiguration({
+    STREAM_CUSTOMER_CODE: "f33zs165nr7gyfy4",
+    STREAM_LIVE_INPUT_ID: "6b9e68b07dfee8cc2d116e4c51d6a957",
+    STREAM_FAILOVER_LIVE_INPUT_ID: "../iframe",
+  });
+
+  assert.equal(configuration?.source, "primary");
+  assert.match(
+    configuration?.playerUrl ?? "",
+    /6b9e68b07dfee8cc2d116e4c51d6a957/,
+  );
 });
 
 test("rejects missing and unsafe Stream bindings", () => {

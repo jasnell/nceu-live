@@ -26,17 +26,21 @@ Create a Live Input in the Cloudflare dashboard, then collect these public playb
 
 - `STREAM_CUSTOMER_CODE`: the customer code from the Stream Player embed URL
 - `STREAM_LIVE_INPUT_ID`: the stable Live Input UID, not a generated recording/video UID and never the Stream Key
+- `STREAM_FAILOVER_LIVE_INPUT_ID`: an optional backup Live Input UID that takes precedence when set to a valid value
 
 For local development, create `.dev.vars`:
 
 ```dotenv
 STREAM_CUSTOMER_CODE=your-customer-code
 STREAM_LIVE_INPUT_ID=your-live-input-id
+STREAM_FAILOVER_LIVE_INPUT_ID=
 ```
 
 The Stream Key is only used by the encoder, such as OBS, and must not be added to this project.
 
 The production playback identifiers are committed as plain-text Worker variables in `wrangler.jsonc`. The values are included in the public player URL, so they are not secrets. Update them there if the conference moves to a different Live Input.
+
+For emergency failover, add `STREAM_FAILOVER_LIVE_INPUT_ID` under the Worker's dashboard variables and deploy the variable change. The browser will receive the alternate player after the 10-second edge cache expires and replace its iframe on the next 15-second poll. Delete the variable and deploy that change to return to the primary input. The backup must belong to the same Stream account and have matching playback and allowed-origin settings. `/api/stream` reports `"source":"failover"` when the override is active.
 
 `PROGRAM_URL` points to `https://nodeconf.eu/program.json`. For end-to-end local work with the main site running on port 3001, override it when starting Wrangler:
 

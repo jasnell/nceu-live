@@ -15,6 +15,7 @@ interface StreamApiResponse {
   configured: boolean;
   liveViewers?: number;
   playerUrl?: string;
+  source?: "primary" | "failover";
   status: LifecycleStatus | "unconfigured";
 }
 
@@ -82,6 +83,7 @@ async function getStreamResponse(env: Env): Promise<Response> {
     configured: true,
     ...(liveViewers === null ? {} : { liveViewers }),
     playerUrl: configuration.playerUrl,
+    source: configuration.source,
     status,
   });
 }

@@ -1,5 +1,6 @@
 export interface StreamBindings {
   STREAM_CUSTOMER_CODE?: string;
+  STREAM_FAILOVER_LIVE_INPUT_ID?: string;
   STREAM_LIVE_INPUT_ID?: string;
 }
 
@@ -8,6 +9,7 @@ export type LifecycleStatus = "live" | "standby" | "unknown";
 export interface StreamConfiguration {
   lifecycleUrl: string;
   playerUrl: string;
+  source: "primary" | "failover";
   viewsUrl: string;
 }
 
@@ -17,7 +19,12 @@ export function resolveStreamConfiguration(
   bindings: StreamBindings,
 ): StreamConfiguration | null {
   const customerCode = bindings.STREAM_CUSTOMER_CODE?.trim();
-  const inputId = bindings.STREAM_LIVE_INPUT_ID?.trim();
+  const primaryInputId = bindings.STREAM_LIVE_INPUT_ID?.trim();
+  const failoverInputId = bindings.STREAM_FAILOVER_LIVE_INPUT_ID?.trim();
+  const useFailover = Boolean(
+    failoverInputId && safePathSegment.test(failoverInputId),
+  );
+  const inputId = useFailover ? failoverInputId : primaryInputId;
 
   if (
     !customerCode ||
@@ -36,6 +43,7 @@ export function resolveStreamConfiguration(
   return {
     lifecycleUrl: new URL(`/${inputId}/lifecycle`, streamOrigin).toString(),
     playerUrl: playerUrl.toString(),
+    source: useFailover ? "failover" : "primary",
     viewsUrl: new URL(`/${inputId}/views`, streamOrigin).toString(),
   };
 }
