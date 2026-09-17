@@ -571,25 +571,44 @@ main {
   color: var(--paper);
 }
 
-.stage-header p {
-  margin: 0;
-  color: inherit;
-  font-family: var(--mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.18em;
-  opacity: 0.7;
-  text-transform: uppercase;
-}
-
-.stage-header p span {
-  color: var(--accent);
-}
-
 .stage-signals {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.55rem;
+}
+
+.stage-clocks,
+.stage-clocks > div {
+  display: flex;
+  align-items: baseline;
+}
+
+.stage-clocks {
+  gap: 0.6rem;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.stage-clocks > div {
+  gap: 0.4rem;
+}
+
+.stage-clocks > span,
+.stage-clocks > div > span {
+  opacity: 0.62;
+}
+
+.stage-clocks > span {
+  color: var(--accent);
+}
+
+.stage-clocks time {
+  color: inherit;
+  font-weight: 500;
 }
 
 .live-status {
@@ -1332,16 +1351,13 @@ main {
     padding: 0.8rem;
   }
 
-  .stage-header p {
-    padding-left: 0.15rem;
-  }
-
-  .stage-header > p {
-    display: none;
-  }
-
   .stage-signals {
     width: 100%;
+  }
+
+  .stage-clocks {
+    width: 100%;
+    gap: 0.7rem;
   }
 
   .player-column {

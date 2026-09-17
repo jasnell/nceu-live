@@ -8,6 +8,8 @@ const liveStatus = document.querySelector("#live-status");
 const liveStatusLabel = document.querySelector("#live-status-label");
 const viewerCount = document.querySelector("#viewer-count");
 const viewerCountLabel = document.querySelector("#viewer-count-label");
+const bolognaClock = document.querySelector("#bologna-clock");
+const viewerClock = document.querySelector("#viewer-clock");
 const directPlayerLinks = document.querySelectorAll("[data-direct-player]");
 const themeColor = document.querySelector("#theme-color");
 const themeButtons = document.querySelectorAll("[data-theme-value]");
@@ -15,6 +17,38 @@ const themeButtons = document.querySelectorAll("[data-theme-value]");
 let activePlayerUrl = null;
 let refreshPromise = null;
 const viewerCountFormatter = new Intl.NumberFormat("en");
+const bolognaTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+  timeZone: "Europe/Rome",
+});
+const viewerTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+});
+const bolognaTimeLabelFormatter = new Intl.DateTimeFormat(undefined, {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+  timeZone: "Europe/Rome",
+  timeZoneName: "short",
+});
+const viewerTimeLabelFormatter = new Intl.DateTimeFormat(undefined, {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+  timeZoneName: "short",
+});
 
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
@@ -72,6 +106,19 @@ function setLiveViewerCount(value) {
   }
 
   viewerCount.hidden = false;
+}
+
+function updateClocks() {
+  const now = new Date();
+  const dateTime = now.toISOString();
+
+  bolognaClock.textContent = bolognaTimeFormatter.format(now);
+  bolognaClock.dateTime = dateTime;
+  bolognaClock.setAttribute("aria-label", bolognaTimeLabelFormatter.format(now));
+
+  viewerClock.textContent = viewerTimeFormatter.format(now);
+  viewerClock.dateTime = dateTime;
+  viewerClock.setAttribute("aria-label", viewerTimeLabelFormatter.format(now));
 }
 
 function setDirectPlayerUrl(url) {
@@ -204,6 +251,7 @@ async function refreshStream() {
 }
 
 initializeThemeSwitch();
+updateClocks();
 retryButton.addEventListener("click", refreshStream);
 refreshStream();
 
@@ -213,8 +261,15 @@ window.setInterval(() => {
   }
 }, 15_000);
 
+window.setInterval(() => {
+  if (!document.hidden) {
+    updateClocks();
+  }
+}, 1_000);
+
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
+    updateClocks();
     refreshStream();
   }
 });
