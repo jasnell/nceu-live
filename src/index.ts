@@ -8,6 +8,7 @@ import {
 
 interface Env extends StreamBindings {
   ASSETS: Fetcher;
+  PROGRAM_URL?: string;
 }
 
 interface StreamApiResponse {
@@ -18,7 +19,9 @@ interface StreamApiResponse {
 }
 
 const streamApiPath = "/api/stream";
+const programApiPath = "/api/program";
 const streamStatusMaxAge = 10;
+const programMaxAge = 300;
 
 const securityHeaders = {
   "Content-Security-Policy": [
@@ -96,6 +99,78 @@ async function fetchStreamJson(url: string): Promise<unknown> {
   return response.json();
 }
 
+async function getProgramResponse(env: Env): Promise<Response> {
+  try {
+    const response = await fetch(
+      env.PROGRAM_URL ?? "https://nodeconf.eu/program.json",
+      {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(5_000),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Program endpoint returned ${response.status}`);
+    }
+
+    const program: unknown = await response.json();
+
+    if (!isPublicProgram(program)) {
+      throw new Error("Program endpoint returned an unsupported schema");
+    }
+
+    return Response.json(program, {
+      headers: {
+        "Cache-Control": `public, max-age=${programMaxAge}, stale-while-revalidate=3600`,
+      },
+    });
+  } catch {
+    return Response.json(
+      { error: "Program unavailable" },
+      { status: 502, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+}
+
+function isPublicProgram(value: unknown): value is Record<string, unknown> {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "schemaVersion" in value &&
+    value.schemaVersion === 1 &&
+    "timeZone" in value &&
+    value.timeZone === "Europe/Rome" &&
+    "days" in value &&
+    Array.isArray(value.days) &&
+    "speakerNames" in value &&
+    value.speakerNames !== null &&
+    typeof value.speakerNames === "object"
+  );
+}
+
+async function getCachedResponse(
+  url: URL,
+  path: string,
+  context: ExecutionContext,
+  load: () => Promise<Response>,
+): Promise<Response> {
+  const cache = caches.default;
+  const cacheKey = new Request(new URL(path, url.origin), { method: "GET" });
+  const cached = await cache.match(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const response = await load();
+
+  if (response.ok) {
+    context.waitUntil(cache.put(cacheKey, response.clone()));
+  }
+
+  return response;
+}
+
 function applySecurityHeaders(response: Response): Response {
   const secured = new Response(response.body, response);
 
@@ -110,7 +185,7 @@ export default {
   async fetch(request, env, context): Promise<Response> {
     const url = new URL(request.url);
 
-    if (url.pathname === streamApiPath) {
+    if (url.pathname === streamApiPath || url.pathname === programApiPath) {
       if (request.method !== "GET") {
         return applySecurityHeaders(
           new Response("Method Not Allowed", {
@@ -120,18 +195,15 @@ export default {
         );
       }
 
-      const cache = caches.default;
-      const cacheKey = new Request(new URL(streamApiPath, url.origin), {
-        method: "GET",
-      });
-      const cached = await cache.match(cacheKey);
-
-      if (cached) {
-        return applySecurityHeaders(cached);
-      }
-
-      const response = await getStreamResponse(env);
-      context.waitUntil(cache.put(cacheKey, response.clone()));
+      const response = await getCachedResponse(
+        url,
+        url.pathname,
+        context,
+        () =>
+          url.pathname === streamApiPath
+            ? getStreamResponse(env)
+            : getProgramResponse(env),
+      );
       return applySecurityHeaders(response);
     }
 

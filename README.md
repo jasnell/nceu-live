@@ -6,7 +6,9 @@ The Cloudflare Worker for `live.nodeconf.eu`. It serves a responsive broadcast p
 
 - Cloudflare Workers Static Assets serves the HTML, CSS, JavaScript, and event mark without invoking the Worker script.
 - `GET /api/stream` builds the Stream Player URL from Worker bindings and checks the Live Input lifecycle and live viewer count concurrently.
+- `GET /api/program` proxies the versioned program feed published by the main NodeConf EU Worker and caches it for five minutes.
 - The browser polls that endpoint every 15 seconds to keep the on-air indicator and viewer count current.
+- The current/next panel advances against the published schedule in the `Europe/Rome` timezone and refreshes its source data every five minutes.
 - Stream status responses are cached at the edge for 10 seconds so viewer traffic does not become one analytics request per viewer.
 - The stable Live Input ID is used instead of a per-broadcast Video ID, so one page follows the active broadcast across both conference days.
 
@@ -35,6 +37,12 @@ STREAM_LIVE_INPUT_ID=your-live-input-id
 The Stream Key is only used by the encoder, such as OBS, and must not be added to this project.
 
 The production playback identifiers are committed as plain-text Worker variables in `wrangler.jsonc`. The values are included in the public player URL, so they are not secrets. Update them there if the conference moves to a different Live Input.
+
+`PROGRAM_URL` points to `https://nodeconf.eu/program.json`. For end-to-end local work with the main site running on port 3001, override it when starting Wrangler:
+
+```bash
+npm run dev -- --var PROGRAM_URL:http://localhost:3001/program.json
+```
 
 If Stream hotlink protection is enabled, add `live.nodeconf.eu` to the Live Input recording settings' allowed origins. Add the local Wrangler origin while testing locally, for example `localhost:8787`, then remove it before the event if it is no longer needed.
 

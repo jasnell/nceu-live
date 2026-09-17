@@ -150,13 +150,33 @@
 
               <aside class="broadcast-aside" aria-labelledby="broadcast-note-title">
                 <div class="aside-index">
-                  <span>LIVE / 01</span>
+                  <span>PROGRAM / LIVE</span>
                   <svg viewBox="0 0 32 24" aria-hidden="true">
                     <path d="M2 12h4M9 8v8M16 4v16M23 7v10M30 10v4"></path>
                   </svg>
                 </div>
-                <h2 id="broadcast-note-title">Two days.<br><em>One shared room.</em></h2>
-                <p>Watch every main-stage session as it happens. The same player stays with the active broadcast across both conference days.</p>
+
+                <div class="current-session">
+                  <div class="session-meta">
+                    <span id="current-session-label">Running order</span>
+                    <time id="current-session-time" hidden></time>
+                  </div>
+                  <h2 id="broadcast-note-title">
+                    <a id="current-session-title" href="https://nodeconf.eu/program" target="_blank" rel="noopener noreferrer">Loading the program.</a>
+                  </h2>
+                  <p id="current-session-people" class="session-people">Checking the main-stage schedule.</p>
+                </div>
+
+                <section id="next-session" class="next-session" aria-labelledby="next-session-title" hidden>
+                  <div class="session-meta">
+                    <span>Up next</span>
+                    <time id="next-session-time"></time>
+                  </div>
+                  <h3>
+                    <a id="next-session-title" href="https://nodeconf.eu/program" target="_blank" rel="noopener noreferrer"></a>
+                  </h3>
+                  <p id="next-session-people" class="session-people" hidden></p>
+                </section>
 
                 <dl class="broadcast-details">
                   <div>
@@ -173,7 +193,7 @@
                   </div>
                 </dl>
 
-                <a class="button button-primary" href="https://nodeconf.eu/program">
+                <a class="button button-primary" href="https://nodeconf.eu/program" target="_blank" rel="noopener noreferrer" aria-label="View the program (opens in a new tab)">
                   <span>View the program</span>
                   <span aria-hidden="true">-&gt;</span>
                 </a>

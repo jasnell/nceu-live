@@ -10,12 +10,24 @@ const viewerCount = document.querySelector("#viewer-count");
 const viewerCountLabel = document.querySelector("#viewer-count-label");
 const bolognaClock = document.querySelector("#bologna-clock");
 const viewerClock = document.querySelector("#viewer-clock");
+const currentSessionLabel = document.querySelector("#current-session-label");
+const currentSessionTime = document.querySelector("#current-session-time");
+const currentSessionTitle = document.querySelector("#current-session-title");
+const currentSessionPeople = document.querySelector("#current-session-people");
+const nextSession = document.querySelector("#next-session");
+const nextSessionTime = document.querySelector("#next-session-time");
+const nextSessionTitle = document.querySelector("#next-session-title");
+const nextSessionPeople = document.querySelector("#next-session-people");
 const directPlayerLinks = document.querySelectorAll("[data-direct-player]");
 const themeColor = document.querySelector("#theme-color");
 const themeButtons = document.querySelectorAll("[data-theme-value]");
 
 let activePlayerUrl = null;
 let refreshPromise = null;
+let programDocument = null;
+let programEntries = [];
+let programRefreshPromise = null;
+let programMinute = null;
 const viewerCountFormatter = new Intl.NumberFormat("en");
 const bolognaTimeFormatter = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
@@ -119,6 +131,297 @@ function updateClocks() {
   viewerClock.textContent = viewerTimeFormatter.format(now);
   viewerClock.dateTime = dateTime;
   viewerClock.setAttribute("aria-label", viewerTimeLabelFormatter.format(now));
+
+  const minute = Math.floor(now.getTime() / 60_000);
+
+  if (programMinute !== minute) {
+    programMinute = minute;
+    updateProgramTimeline(now);
+  }
+}
+
+function parseProgramTime(value) {
+  const match = typeof value === "string" && value.match(/^(\d{2}):(\d{2})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (hours > 23 || minutes > 59) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
+}
+
+function isBroadcastSession(session) {
+  if (!session || typeof session !== "object") {
+    return false;
+  }
+
+  if (session.type === "talk" || session.type === "intro") {
+    return true;
+  }
+
+  return session.type === "break" && session.start >= "09:00";
+}
+
+function createProgramEntries(program) {
+  const entries = [];
+
+  for (const day of program.days) {
+    if (
+      !day ||
+      typeof day !== "object" ||
+      typeof day.date !== "string" ||
+      !Array.isArray(day.sessions)
+    ) {
+      continue;
+    }
+
+    for (const session of day.sessions) {
+      const startMinutes = parseProgramTime(session?.start);
+      const endMinutes = parseProgramTime(session?.end);
+
+      if (
+        !isBroadcastSession(session) ||
+        startMinutes === null ||
+        typeof session.title !== "string"
+      ) {
+        continue;
+      }
+
+      entries.push({
+        date: day.date,
+        dayLabel: typeof day.label === "string" ? day.label : day.date,
+        endMinutes: endMinutes ?? startMinutes + 30,
+        session,
+        startMinutes,
+      });
+    }
+  }
+
+  return entries.sort(
+    (a, b) => a.date.localeCompare(b.date) || a.startMinutes - b.startMinutes,
+  );
+}
+
+function getProgramNow(now, timeZone) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone,
+  });
+  const parts = Object.fromEntries(
+    formatter
+      .formatToParts(now)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
+
+  return {
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    minutes: Number(parts.hour) * 60 + Number(parts.minute),
+  };
+}
+
+function sessionPeople(session) {
+  const people = [];
+
+  if (typeof session.speaker === "string") {
+    people.push(session.speaker);
+  } else if (
+    typeof session.speakerId === "string" &&
+    typeof programDocument?.speakerNames?.[session.speakerId] === "string"
+  ) {
+    people.push(programDocument.speakerNames[session.speakerId]);
+  }
+
+  if (Array.isArray(session.coSpeakerIds)) {
+    for (const id of session.coSpeakerIds) {
+      const name = programDocument?.speakerNames?.[id];
+
+      if (typeof name === "string" && !people.includes(name)) {
+        people.push(name);
+      }
+    }
+  }
+
+  return people.join(" & ");
+}
+
+function setProgramLink(link, session) {
+  const suffix =
+    typeof session?.talkId === "string"
+      ? `#${encodeURIComponent(session.talkId)}`
+      : "";
+  link.href = `https://nodeconf.eu/program${suffix}`;
+  link.setAttribute(
+    "aria-label",
+    `${session.title} (opens in a new tab)`,
+  );
+}
+
+function setSessionTime(element, entry) {
+  const end =
+    typeof entry.session.end === "string" ? `-${entry.session.end}` : "";
+  element.textContent = `${entry.session.start}${end}`;
+  element.dateTime = `${entry.date}T${entry.session.start}:00`;
+  element.setAttribute(
+    "aria-label",
+    `${entry.dayLabel}, ${entry.session.start}${
+      entry.session.end ? ` to ${entry.session.end}` : ""
+    }, Bologna time`,
+  );
+  element.hidden = false;
+}
+
+function setSessionPeople(element, entry) {
+  const people = sessionPeople(entry.session);
+  element.textContent = people;
+  element.hidden = people.length === 0;
+}
+
+function renderCurrentSession(entry, label) {
+  currentSessionLabel.textContent = label;
+  currentSessionTitle.textContent = entry.session.title;
+  setProgramLink(currentSessionTitle, entry.session);
+  setSessionTime(currentSessionTime, entry);
+  setSessionPeople(currentSessionPeople, entry);
+}
+
+function renderNextSession(entry) {
+  nextSessionTitle.textContent = entry.session.title;
+  setProgramLink(nextSessionTitle, entry.session);
+  setSessionTime(nextSessionTime, entry);
+  setSessionPeople(nextSessionPeople, entry);
+  nextSession.hidden = false;
+}
+
+function updateProgramTimeline(now = new Date()) {
+  if (!programDocument || programEntries.length === 0) {
+    return;
+  }
+
+  const programNow = getProgramNow(now, programDocument.timeZone);
+  const current = programEntries.find(
+    (entry) =>
+      entry.date === programNow.date &&
+      entry.startMinutes <= programNow.minutes &&
+      programNow.minutes < entry.endMinutes,
+  );
+  const upcoming = programEntries.filter(
+    (entry) =>
+      entry.date > programNow.date ||
+      (entry.date === programNow.date && entry.startMinutes > programNow.minutes),
+  );
+
+  if (current) {
+    renderCurrentSession(
+      current,
+      current.session.type === "break" ? "Happening now" : "On stage now",
+    );
+
+    if (upcoming[0]) {
+      renderNextSession(upcoming[0]);
+    } else {
+      nextSession.hidden = true;
+    }
+
+    return;
+  }
+
+  if (upcoming[0]) {
+    const label =
+      upcoming[0].date === programNow.date
+        ? "Coming up"
+        : `${upcoming[0].dayLabel} / Coming up`;
+    renderCurrentSession(upcoming[0], label);
+    nextSession.hidden = true;
+    return;
+  }
+
+  currentSessionLabel.textContent = "Program complete";
+  currentSessionTime.hidden = true;
+  currentSessionTitle.textContent = "Thanks for joining us.";
+  currentSessionTitle.href = "https://nodeconf.eu/program";
+  currentSessionTitle.setAttribute(
+    "aria-label",
+    "View the complete program (opens in a new tab)",
+  );
+  currentSessionPeople.textContent = "Revisit the full program and speaker lineup.";
+  currentSessionPeople.hidden = false;
+  nextSession.hidden = true;
+}
+
+function isProgramDocument(value) {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    value.schemaVersion === 1 &&
+    value.timeZone === "Europe/Rome" &&
+    Array.isArray(value.days) &&
+    value.speakerNames !== null &&
+    typeof value.speakerNames === "object"
+  );
+}
+
+function showProgramUnavailable() {
+  currentSessionLabel.textContent = "Running order";
+  currentSessionTime.hidden = true;
+  currentSessionTitle.textContent = "Program temporarily unavailable.";
+  currentSessionTitle.href = "https://nodeconf.eu/program";
+  currentSessionTitle.setAttribute(
+    "aria-label",
+    "Open the full program (opens in a new tab)",
+  );
+  currentSessionPeople.textContent = "Open the full program for the latest schedule.";
+  currentSessionPeople.hidden = false;
+  nextSession.hidden = true;
+}
+
+async function refreshProgram() {
+  if (programRefreshPromise) {
+    return programRefreshPromise;
+  }
+
+  programRefreshPromise = (async () => {
+    try {
+      const response = await fetch("/api/program", {
+        headers: { Accept: "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Program endpoint returned ${response.status}`);
+      }
+
+      const program = await response.json();
+
+      if (!isProgramDocument(program)) {
+        throw new Error("Program endpoint returned an unsupported schema");
+      }
+
+      programDocument = program;
+      programEntries = createProgramEntries(program);
+      programMinute = Math.floor(Date.now() / 60_000);
+      updateProgramTimeline();
+    } catch {
+      if (!programDocument) {
+        showProgramUnavailable();
+      }
+    } finally {
+      programRefreshPromise = null;
+    }
+  })();
+
+  return programRefreshPromise;
 }
 
 function setDirectPlayerUrl(url) {
@@ -254,6 +557,7 @@ initializeThemeSwitch();
 updateClocks();
 retryButton.addEventListener("click", refreshStream);
 refreshStream();
+refreshProgram();
 
 window.setInterval(() => {
   if (!document.hidden) {
@@ -267,9 +571,16 @@ window.setInterval(() => {
   }
 }, 1_000);
 
+window.setInterval(() => {
+  if (!document.hidden) {
+    refreshProgram();
+  }
+}, 300_000);
+
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     updateClocks();
     refreshStream();
+    refreshProgram();
   }
 });
