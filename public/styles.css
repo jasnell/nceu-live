@@ -1178,6 +1178,11 @@ main {
 }
 
 @media (max-width: 760px) {
+  /* Live viewing takes priority over the editorial intro on mobile. */
+  .stage-shell {
+    order: -1;
+  }
+
   .site-header {
     align-items: flex-start;
   }
@@ -1329,6 +1334,10 @@ main {
 
   .stage-header p {
     padding-left: 0.15rem;
+  }
+
+  .stage-header > p {
+    display: none;
   }
 
   .stage-signals {
